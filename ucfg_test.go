@@ -335,7 +335,7 @@ func TestHas(t *testing.T) {
 			has:  true,
 			path: "a", idx: -1,
 		},
-		"unkown": {
+		"unknown": {
 			cfg:  map[string]interface{}{"a": 1},
 			has:  false,
 			path: "b", idx: -1,
@@ -354,6 +354,21 @@ func TestHas(t *testing.T) {
 			cfg:  map[string]interface{}{"a.b.c": 1},
 			has:  false,
 			path: "a.d", idx: -1,
+		},
+		"escaped find primitive": {
+			cfg:  map[string]interface{}{"a..b": 1},
+			has:  true,
+			path: "a..b", idx: -1,
+		},
+		"escaped find obj": {
+			cfg:  map[string]interface{}{"a..b.c": 1},
+			has:  true,
+			path: "a..b", idx: -1,
+		},
+		"unknown escaped": {
+			cfg:  map[string]interface{}{"a..b..c": 1},
+			has:  false,
+			path: "a..b", idx: -1,
 		},
 		"array in len": {
 			cfg:  map[string]interface{}{"a": []interface{}{1, 2}},
@@ -417,6 +432,16 @@ func TestRemove(t *testing.T) {
 			cfg:   map[string]interface{}{"a.b": "keep", "a.c": "keep"},
 			wants: map[string]interface{}{"a": map[string]interface{}{"b": "keep", "c": "keep"}},
 			spec:  spec{has: false, path: "a.d", idx: -1},
+		},
+		"escaped": {
+			cfg:   map[string]interface{}{"a..b": "keep", "a..c": "remove"},
+			wants: map[string]interface{}{"a.b": "keep"},
+			spec:  spec{has: true, path: "a..c", idx: -1},
+		},
+		"unknown escaped": {
+			cfg:   map[string]interface{}{"a..b": "keep", "a..c": "keep"},
+			wants: map[string]interface{}{"a.b": "keep", "a.c": "keep"},
+			spec:  spec{has: false, path: "a..d", idx: -1},
 		},
 		"array start": {
 			cfg:   map[string]interface{}{"arr": []interface{}{"a", "b", "c"}},

@@ -348,6 +348,43 @@ func TestUnpackNestedPath(t *testing.T) {
 	}
 }
 
+func TestUnpackEscapedPath(t *testing.T) {
+	tests := []interface{}{
+		&struct {
+			B bool `config:"c..b"`
+		}{},
+
+		&struct {
+			B interface{} `config:"c..b"`
+		}{},
+	}
+
+	c, _ := NewFrom(node{"c.b": true})
+
+	for i, out := range tests {
+		t.Logf("test unpack nested path(%v) into: %v", i, out)
+		err := c.Unpack(out, PathSep("."))
+		if err != nil {
+			t.Fatalf("failed to unpack: %v", err)
+		}
+	}
+
+	// validate content by merging struct (unnested)
+	for i, in := range tests {
+		t.Logf("test unpack nested(%v) check: %v", i, in)
+
+		c, err := NewFrom(in)
+		if err != nil {
+			t.Errorf("failed")
+			continue
+		}
+
+		b, err := c.Bool("c..b", 0)
+		assert.NoError(t, err)
+		assert.True(t, b)
+	}
+}
+
 func TestUnpackArray(t *testing.T) {
 	c, _ := NewFrom(node{"a": []int{1, 2, 3}})
 
@@ -602,6 +639,58 @@ func TestUnpackUnknownNested(t *testing.T) {
 		assert.Equal(t, 42, int(u))
 
 		s, err := tmp.String("s.s", -1, PathSep("."))
+		assert.NoError(t, err)
+		assert.Equal(t, "test", s)
+	}
+}
+
+func TestUnpackUnknownEscaped(t *testing.T) {
+	c, _ := NewFrom(map[string]interface{}{
+		"s.b": nil,
+		"s.i": nil,
+		"s.u": nil,
+		"s.s": nil,
+	})
+
+	tests := []interface{}{
+		node{
+			"s..b": true,
+			"s..i": int(23),
+			"s..u": uint(42),
+			"s..s": "test",
+		},
+	}
+
+	for i, test := range tests {
+		t.Logf("test (%v): %v", i, test)
+
+		err := c.Unpack(test)
+		if err != nil {
+			assert.NoError(t, err)
+			continue
+		}
+
+		t.Logf("unpacked empty (%v): %v", i, test)
+
+		tmp, err := NewFrom(test, PathSep("."))
+		if err != nil {
+			assert.NoError(t, err)
+			continue
+		}
+
+		b, err := tmp.Bool("s..b", -1, PathSep("."))
+		assert.NoError(t, err)
+		assert.Equal(t, true, b)
+
+		i, err := tmp.Int("s..i", -1, PathSep("."))
+		assert.NoError(t, err)
+		assert.Equal(t, 23, int(i))
+
+		u, err := tmp.Uint("s..u", -1, PathSep("."))
+		assert.NoError(t, err)
+		assert.Equal(t, 42, int(u))
+
+		s, err := tmp.String("s..s", -1, PathSep("."))
 		assert.NoError(t, err)
 		assert.Equal(t, "test", s)
 	}

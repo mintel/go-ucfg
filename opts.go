@@ -85,6 +85,8 @@ func ValidatorTag(tag string) Option {
 }
 
 // PathSep sets the path separator used to split up names into a tree like hierarchy.
+// Separators can be escaped by doubling them. For example if `PathSep(".")``, then
+// `{"a..b": true`}` will be parsed as `{"a.b": true}`, not `{"a": {"b": true}}`.
 // If PathSep is not set, field names will not be split.
 func PathSep(sep string) Option {
 	return func(o *options) {

@@ -77,20 +77,23 @@ func TestNested(t *testing.T) {
 
 func TestNestedPath(t *testing.T) {
 	input := []byte(`
-    c.b: true
+abc: true
+abbc: true
   `)
 
-	c, err := NewConfig(input, ucfg.PathSep("."))
+	c, err := NewConfig(input, ucfg.PathSep("b"))
 	if err != nil {
 		t.Fatalf("failed to parse input: %v", err)
 	}
 
 	var verify struct {
-		C struct{ B bool }
+		A   struct{ C bool }
+		ABC bool
 	}
 	err = c.Unpack(&verify)
 	assert.NoError(t, err)
-	assert.True(t, verify.C.B)
+	assert.True(t, verify.A.C)
+	assert.True(t, verify.ABC)
 }
 
 func TestArray(t *testing.T) {

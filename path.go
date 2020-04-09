@@ -19,6 +19,7 @@ package ucfg
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -67,7 +68,26 @@ func parsePath(in, sep string) cfgPath {
 		}
 	}
 
-	elems := strings.Split(in, sep)
+	escSep := regexp.QuoteMeta(sep)
+	re := regexp.MustCompile(escSep + `{1,2}`)
+	var elems []string
+	p := 0
+	doubleSep := sep + sep
+	for _, i := range re.FindAllStringIndex(in, -1) {
+		if i[1]-i[0] > len(sep) {
+			// This is a literal, don't spilt here.
+			continue
+		}
+		s := in[p:i[0]]
+		s = strings.ReplaceAll(s, doubleSep, sep)
+		elems = append(elems, s)
+		p = i[1]
+	}
+	if p < len(in) {
+		s := in[p:]
+		s = strings.ReplaceAll(s, doubleSep, sep)
+		elems = append(elems, s)
+	}
 	fields := make([]field, 0, len(elems))
 	for _, elem := range elems {
 		fields = append(fields, parseField(elem))
